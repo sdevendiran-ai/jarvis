@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School AI Voice Assistant</title>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #f0f2f5; margin: 0; }
+        .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; max-width: 400px; width: 90%; }
+        button { background: #007bff; color: white; border: none; padding: 15px 30px; font-size: 18px; border-radius: 50px; cursor: pointer; transition: background 0.2s; }
+        button.recording { background: #dc3545; animation: pulse 1.5s infinite; }
+        #status { margin-top: 20px; color: #666; font-style: italic; }
+        #output { margin-top: 20px; font-weight: bold; color: #333; text-align: left; background: #eee; padding: 10px; border-radius: 8px; max-height: 150px; overflow-y: auto; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Voice Input for n8n</h2>
+    <button id="micBtn">🎙️ Tap to Speak</button>
+    <div id="status">Ready</div>
+    <div id="output">Your text will appear here...</div>
+</div>
+
+<script>
+    // ⚠️ REPLACE THIS WITH YOUR ACTUAL N8N WEBHOOK URL
+    const N8N_WEBHOOK_URL = 'https://your-n8n-instance.com';
+
+    const micBtn = document.getElementById('micBtn');
+    const statusDiv = document.getElementById('status');
+    const outputDiv = document.getElementById('output');
+
+    // Check if the browser supports Speech Recognition
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+        statusDiv.innerText = "Error: Your browser doesn't support voice recognition.";
+        micBtn.disabled = true;
+    } else {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
+
+        let isRecording = false;
+
+        micBtn.addEventListener('click', () => {
+            if (!isRecording) {
+                recognition.start();
+            } else {
+                recognition.stop();
+            }
+        });
+
+        recognition.onstart = () => {
+            isRecording = true;
+            micBtn.innerText = "🛑 Stop Recording";
+            micBtn.classList.add('recording');
+            statusDiv.innerText = "Listening...";
+        };
+
+        recognition.onend = () => {
+            isRecording = false;
+            micBtn.innerText = "🎙️ Tap to Speak";
+            micBtn.classList.remove('recording');
+        };
+
+        recognition.onresult = async (event) => {
+            const speechToText = event.results[0][0].transcript;
+            outputDiv.innerText = `Sending: "${speechToText}"`;
+            statusDiv.innerText = "Sending to Gemini...";
+
+            try {
+                // Send the text to your n8n Webhook
+                const response = await fetch(N8N_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: speechToText })
+                });
+
+                if (response.ok) {
+                    statusDiv.innerText = "Sent successfully!";
+                } else {
+                    statusDiv.innerText = "Error sending to n8n.";
+                }
+            } catch (error) {
+                statusDiv.innerText = "Network error. Is n8n reachable?";
+                console.error(error);
+            }
+        };
+
+        recognition.onerror = (event) => {
+            statusDiv.innerText = `Error occurred: ${event.error}`;
+            isRecording = false;
+            micBtn.innerText = "🎙️ Tap to Speak";
+            micBtn.classList.remove('recording');
+        };
+    }
+</script>
+
+</body>
+</html>
