@@ -5,12 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>School AI Voice Assistant</title>
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #f0f2f5; margin: 0; }
-        .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; max-width: 400px; width: 90%; }
-        button { background: #007bff; color: white; border: none; padding: 15px 30px; font-size: 18px; border-radius: 50px; cursor: pointer; transition: background 0.2s; }
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: #f0f2f5; margin: 0; padding: 20px; box-sizing: border-box; }
+        .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; max-width: 450px; width: 100%; box-sizing: border-box; }
+        button { background: #007bff; color: white; border: none; padding: 15px 30px; font-size: 18px; border-radius: 50px; cursor: pointer; transition: background 0.2s; width: 100%; max-width: 250px; margin-bottom: 15px; }
         button.recording { background: #dc3545; animation: pulse 1.5s infinite; }
-        #status { margin-top: 20px; color: #666; font-style: italic; }
-        #output { margin-top: 20px; font-weight: bold; color: #333; text-align: left; background: #eee; padding: 10px; border-radius: 8px; max-height: 150px; overflow-y: auto; }
+        #status { margin-top: 10px; color: #666; font-style: italic; font-size: 14px; }
+        .box-title { text-align: left; font-weight: bold; margin: 15px 0 5px 0; color: #555; font-size: 14px; }
+        .output-box { text-align: left; background: #eee; padding: 12px; border-radius: 8px; max-height: 120px; overflow-y: auto; font-size: 15px; color: #333; min-height: 40px; word-wrap: break-word; }
+        #aiResponse { background: #e6f3ff; color: #004085; border: 1px solid #b8daff; max-height: 200px; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
 </head>
@@ -20,18 +22,23 @@
     <h2>Voice Input for n8n</h2>
     <button id="micBtn">🎙️ Tap to Speak</button>
     <div id="status">Ready</div>
-    <div id="output">Your text will appear here...</div>
+    
+    <div class="box-title">You Said:</div>
+    <div id="userSpeech" class="output-box">Your speech will appear here...</div>
+
+    <div class="box-title">Gemini Response:</div>
+    <div id="aiResponse" class="output-box">Waiting for input...</div>
 </div>
 
 <script>
-    // ⚠️ REPLACE THIS WITH YOUR ACTUAL N8N WEBHOOK URL
-    const N8N_WEBHOOK_URL = 'https://your-n8n-instance.com';
+    // Your exact n8n webhook URL
+    const N8N_WEBHOOK_URL = 'https://primary-production-c553.up.railway.app/webhook-test/40775871-f74e-46da-80fb-8bd68bede083';
 
     const micBtn = document.getElementById('micBtn');
     const statusDiv = document.getElementById('status');
-    const outputDiv = document.getElementById('output');
+    const userSpeechDiv = document.getElementById('userSpeech');
+    const aiResponseDiv = document.getElementById('aiResponse');
 
-    // Check if the browser supports Speech Recognition
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     
     if (!SpeechRecognition) {
@@ -68,11 +75,11 @@
 
         recognition.onresult = async (event) => {
             const speechToText = event.results[0][0].transcript;
-            outputDiv.innerText = `Sending: "${speechToText}"`;
+            userSpeechDiv.innerText = speechToText;
             statusDiv.innerText = "Sending to Gemini...";
+            aiResponseDiv.innerText = "Thinking...";
 
             try {
-                // Send the text to your n8n Webhook
                 const response = await fetch(N8N_WEBHOOK_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -80,12 +87,24 @@
                 });
 
                 if (response.ok) {
-                    statusDiv.innerText = "Sent successfully!";
+                    statusDiv.innerText = "Response received!";
+                    
+                    // Checks if n8n returns json or text data back
+                    const data = await response.text();
+                    try {
+                        const jsonData = JSON.parse(data);
+                        // Tries to find common response keys or fallbacks to the whole object string
+                        aiResponseDiv.innerText = jsonData.output || jsonData.response || jsonData.text || JSON.stringify(jsonData, null, 2);
+                    } catch {
+                        aiResponseDiv.innerText = data;
+                    }
                 } else {
                     statusDiv.innerText = "Error sending to n8n.";
+                    aiResponseDiv.innerText = "Failed to fetch response.";
                 }
             } catch (error) {
                 statusDiv.innerText = "Network error. Is n8n reachable?";
+                aiResponseDiv.innerText = "Could not connect to your server.";
                 console.error(error);
             }
         };
