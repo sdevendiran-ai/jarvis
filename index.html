@@ -31,7 +31,6 @@
 </div>
 
 <script>
-    // Your exact n8n webhook URL
     const BASE_URL = 'https://primary-production-c553.up.railway.app/webhook-test/40775871-f74e-46da-80fb-8bd68bede083';
 
     const micBtn = document.getElementById('micBtn');
@@ -80,7 +79,6 @@
             aiResponseDiv.innerText = "Thinking...";
 
             try {
-                // Since n8n is using GET, we append chatInput as a query parameter in the URL
                 const targetUrl = `${BASE_URL}?chatInput=${encodeURIComponent(speechToText)}`;
 
                 const response = await fetch(targetUrl, {
@@ -93,7 +91,15 @@
                     const data = await response.text();
                     try {
                         const jsonData = JSON.parse(data);
-                        aiResponseDiv.innerText = jsonData.output || jsonData.response || jsonData.text || JSON.stringify(jsonData, null, 2);
+                        
+                        // Pulls the message safely even if wrapped inside nested objects or arrays
+                        let finalResult = jsonData.output || jsonData.response || jsonData.text;
+                        
+                        if (!finalResult && Array.isArray(jsonData) && jsonData.length > 0) {
+                            finalResult = jsonData[0].output || jsonData[0].response || jsonData[0].text;
+                        }
+                        
+                        aiResponseDiv.innerText = finalResult || JSON.stringify(jsonData, null, 2);
                     } catch {
                         aiResponseDiv.innerText = data;
                     }
