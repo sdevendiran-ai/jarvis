@@ -3,6 +3,13 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// This fixes the browser security block automatically!
+app.use((req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    next();
+});
+
 // Serve static files from the current directory
 app.use(express.static(__dirname));
 
