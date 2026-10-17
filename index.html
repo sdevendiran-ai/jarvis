@@ -32,7 +32,7 @@
 
 <script>
     // Your exact n8n webhook URL
-    const N8N_WEBHOOK_URL = 'https://primary-production-c553.up.railway.app/webhook-test/40775871-f74e-46da-80fb-8bd68bede083';
+    const BASE_URL = 'https://primary-production-c553.up.railway.app/webhook-test/40775871-f74e-46da-80fb-8bd68bede083';
 
     const micBtn = document.getElementById('micBtn');
     const statusDiv = document.getElementById('status');
@@ -80,20 +80,19 @@
             aiResponseDiv.innerText = "Thinking...";
 
             try {
-                const response = await fetch(N8N_WEBHOOK_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ chatInput: speechToText })
+                // Since n8n is using GET, we append chatInput as a query parameter in the URL
+                const targetUrl = `${BASE_URL}?chatInput=${encodeURIComponent(speechToText)}`;
+
+                const response = await fetch(targetUrl, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
                 });
 
                 if (response.ok) {
                     statusDiv.innerText = "Response received!";
-                    
-                    // Checks if n8n returns json or text data back
                     const data = await response.text();
                     try {
                         const jsonData = JSON.parse(data);
-                        // Tries to find common response keys or fallbacks to the whole object string
                         aiResponseDiv.innerText = jsonData.output || jsonData.response || jsonData.text || JSON.stringify(jsonData, null, 2);
                     } catch {
                         aiResponseDiv.innerText = data;
