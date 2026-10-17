@@ -31,7 +31,8 @@
 </div>
 
 <script>
-    const BASE_URL = 'https://primary-production-c553.up.railway.app/webhook-test/40775871-f74e-46da-80fb-8bd68bede083';
+    // Configured with your production URL endpoint
+    const BASE_URL = 'https://primary-production-c553.up.railway.app/webhook/40775871-f74e-46da-80fb-8bd68bede083';
 
     const micBtn = document.getElementById('micBtn');
     const statusDiv = document.getElementById('status');
@@ -53,7 +54,6 @@
 
         micBtn.addEventListener('click', () => {
             if (!isRecording) {
-                // Stop any audio currently playing before listening again
                 window.speechSynthesis.cancel();
                 recognition.start();
             } else {
@@ -75,7 +75,7 @@
         };
 
         recognition.onresult = async (event) => {
-            const speechToText = event.results[0][0].transcript;
+            const speechToText = event.results.transcript;
             userSpeechDiv.innerText = speechToText;
             statusDiv.innerText = "Sending to JARVIS...";
             aiResponseDiv.innerText = "Thinking...";
@@ -101,8 +101,6 @@
                     }
 
                     aiResponseDiv.innerText = finalResult;
-                    
-                    // Trigger the robotic speech playback
                     speakRobotic(finalResult);
 
                 } else {
@@ -124,28 +122,23 @@
         };
     }
 
-    // Function to handle the robotic audio synthesis
     function speakRobotic(text) {
-        // Cancel any lingering spoken audio queue
         window.speechSynthesis.cancel();
 
         const utterance = new SpeechSynthesisUtterance(text);
-        
-        // Try to pick a crisp English speaker profile
         const voices = window.speechSynthesis.getVoices();
         const googleVoice = voices.find(voice => voice.name.includes('Google US English') || voice.name.includes('Google UK English'));
+        
         if (googleVoice) {
             utterance.voice = googleVoice;
         }
 
-        // Adjust parameters to synthesize a monotone, robotic system sound
-        utterance.pitch = 0.5; // Lower pitch for a more mechanical sound
-        utterance.rate = 1.1;  // Slightly faster pace to mimic computerized processing
+        utterance.pitch = 0.5; 
+        utterance.rate = 1.1;  
 
         window.speechSynthesis.speak(utterance);
     }
 
-    // Chrome/Safari requirement to initialize the audio engine profile list
     if (window.speechSynthesis.onvoiceschanged !== undefined) {
         window.speechSynthesis.onvoiceschanged = window.speechSynthesis.getVoices;
     }
