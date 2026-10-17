@@ -26,7 +26,7 @@
     <div class="box-title">You Said:</div>
     <div id="userSpeech" class="output-box">Your speech will appear here...</div>
 
-    <div class="box-title">Gemini Response:</div>
+    <div class="box-title">JARVIS Response:</div>
     <div id="aiResponse" class="output-box">Waiting for input...</div>
 </div>
 
@@ -53,6 +53,8 @@
 
         micBtn.addEventListener('click', () => {
             if (!isRecording) {
+                // Stop any audio currently playing before listening again
+                window.speechSynthesis.cancel();
                 recognition.start();
             } else {
                 recognition.stop();
@@ -75,7 +77,7 @@
         recognition.onresult = async (event) => {
             const speechToText = event.results[0][0].transcript;
             userSpeechDiv.innerText = speechToText;
-            statusDiv.innerText = "Sending to Gemini...";
+            statusDiv.innerText = "Sending to JARVIS...";
             aiResponseDiv.innerText = "Thinking...";
 
             try {
@@ -89,20 +91,20 @@
                 if (response.ok) {
                     statusDiv.innerText = "Response received!";
                     const data = await response.text();
+                    let finalResult = "";
+
                     try {
                         const jsonData = JSON.parse(data);
-                        
-                        // Pulls the message safely even if wrapped inside nested objects or arrays
-                        let finalResult = jsonData.output || jsonData.response || jsonData.text;
-                        
-                        if (!finalResult && Array.isArray(jsonData) && jsonData.length > 0) {
-                            finalResult = jsonData[0].output || jsonData[0].response || jsonData[0].text;
-                        }
-                        
-                        aiResponseDiv.innerText = finalResult || JSON.stringify(jsonData, null, 2);
+                        finalResult = jsonData.output || jsonData.response || jsonData.text || JSON.stringify(jsonData);
                     } catch {
-                        aiResponseDiv.innerText = data;
+                        finalResult = data;
                     }
+
+                    aiResponseDiv.innerText = finalResult;
+                    
+                    // Trigger the robotic speech playback
+                    speakRobotic(finalResult);
+
                 } else {
                     statusDiv.innerText = "Error sending to n8n.";
                     aiResponseDiv.innerText = "Failed to fetch response.";
@@ -120,6 +122,32 @@
             micBtn.innerText = "🎙️ Tap to Speak";
             micBtn.classList.remove('recording');
         };
+    }
+
+    // Function to handle the robotic audio synthesis
+    function speakRobotic(text) {
+        // Cancel any lingering spoken audio queue
+        window.speechSynthesis.cancel();
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        
+        // Try to pick a crisp English speaker profile
+        const voices = window.speechSynthesis.getVoices();
+        const googleVoice = voices.find(voice => voice.name.includes('Google US English') || voice.name.includes('Google UK English'));
+        if (googleVoice) {
+            utterance.voice = googleVoice;
+        }
+
+        // Adjust parameters to synthesize a monotone, robotic system sound
+        utterance.pitch = 0.5; // Lower pitch for a more mechanical sound
+        utterance.rate = 1.1;  // Slightly faster pace to mimic computerized processing
+
+        window.speechSynthesis.speak(utterance);
+    }
+
+    // Chrome/Safari requirement to initialize the audio engine profile list
+    if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = window.speechSynthesis.getVoices;
     }
 </script>
 
