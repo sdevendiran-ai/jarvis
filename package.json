@@ -1,0 +1,12 @@
+{
+  "name": "n8n-voice-input-interface",
+  "version": "1.0.0",
+  "description": "Voice recorder for n8n webhooks",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
