@@ -83,7 +83,7 @@
                 const response = await fetch(N8N_WEBHOOK_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text: speechToText })
+                    body: JSON.stringify({ chatInput: speechToText })
                 });
 
                 if (response.ok) {
