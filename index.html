@@ -53,8 +53,6 @@
 
         micBtn.addEventListener('click', () => {
             if (!isRecording) {
-                // Stop any audio currently playing before listening again
-                window.speechSynthesis.cancel();
                 recognition.start();
             } else {
                 recognition.stop();
@@ -91,20 +89,22 @@
                 if (response.ok) {
                     statusDiv.innerText = "Response received!";
                     const data = await response.text();
-                    let finalResult = "";
-
+                    
+                    // Fixed extraction sequence to guarantee it never shows 'undefined'
                     try {
                         const jsonData = JSON.parse(data);
-                        finalResult = jsonData.output || jsonData.response || jsonData.text || JSON.stringify(jsonData);
+                        
+                        // Handle multiple object layers or array items cleanly
+                        let parsedText = jsonData.output || jsonData.response || jsonData.text;
+                        if (!parsedText && Array.isArray(jsonData) && jsonData.length > 0) {
+                            parsedText = jsonData[0].output || jsonData[0].response || jsonData[0].text;
+                        }
+                        
+                        aiResponseDiv.innerText = parsedText || JSON.stringify(jsonData, null, 2);
                     } catch {
-                        finalResult = data;
+                        // Fallback straight to raw string text if it is not standard JSON formatting
+                        aiResponseDiv.innerText = data || "No message content returned.";
                     }
-
-                    aiResponseDiv.innerText = finalResult;
-                    
-                    // Trigger the robotic speech playback
-                    speakRobotic(finalResult);
-
                 } else {
                     statusDiv.innerText = "Error sending to n8n.";
                     aiResponseDiv.innerText = "Failed to fetch response.";
@@ -122,32 +122,6 @@
             micBtn.innerText = "🎙️ Tap to Speak";
             micBtn.classList.remove('recording');
         };
-    }
-
-    // Function to handle the robotic audio synthesis
-    function speakRobotic(text) {
-        // Cancel any lingering spoken audio queue
-        window.speechSynthesis.cancel();
-
-        const utterance = new SpeechSynthesisUtterance(text);
-        
-        // Try to pick a crisp English speaker profile
-        const voices = window.speechSynthesis.getVoices();
-        const googleVoice = voices.find(voice => voice.name.includes('Google US English') || voice.name.includes('Google UK English'));
-        if (googleVoice) {
-            utterance.voice = googleVoice;
-        }
-
-        // Adjust parameters to synthesize a monotone, robotic system sound
-        utterance.pitch = 0.5; // Lower pitch for a more mechanical sound
-        utterance.rate = 1.1;  // Slightly faster pace to mimic computerized processing
-
-        window.speechSynthesis.speak(utterance);
-    }
-
-    // Chrome/Safari requirement to initialize the audio engine profile list
-    if (window.speechSynthesis.onvoiceschanged !== undefined) {
-        window.speechSynthesis.onvoiceschanged = window.speechSynthesis.getVoices;
     }
 </script>
 
