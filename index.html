@@ -31,8 +31,7 @@
 </div>
 
 <script>
-    // Live production endpoint
-    const BASE_URL = 'https://railway.app';
+    const BASE_URL = 'https://primary-production-c553.up.railway.app/webhook-test/40775871-f74e-46da-80fb-8bd68bede083';
 
     const micBtn = document.getElementById('micBtn');
     const statusDiv = document.getElementById('status');
@@ -54,7 +53,7 @@
 
         micBtn.addEventListener('click', () => {
             if (!isRecording) {
-                // Cancel any audio speech queue before recording begins
+                // Stop any audio currently playing before listening again
                 window.speechSynthesis.cancel();
                 recognition.start();
             } else {
@@ -96,24 +95,14 @@
 
                     try {
                         const jsonData = JSON.parse(data);
-                        
-                        // Extract output from nested structure or flat keys safely
-                        finalResult = jsonData.output || jsonData.response || jsonData.text;
-                        
-                        if (!finalResult && Array.isArray(jsonData) && jsonData.length > 0) {
-                            finalResult = jsonData[0].output || jsonData[0].response || jsonData[0].text;
-                        }
-
-                        if (!finalResult) {
-                            finalResult = JSON.stringify(jsonData);
-                        }
+                        finalResult = jsonData.output || jsonData.response || jsonData.text || JSON.stringify(jsonData);
                     } catch {
                         finalResult = data;
                     }
 
-                    aiResponseDiv.innerText = finalResult || "No response received.";
+                    aiResponseDiv.innerText = finalResult;
                     
-                    // Trigger the robotic speech playback audio engine
+                    // Trigger the robotic speech playback
                     speakRobotic(finalResult);
 
                 } else {
@@ -135,26 +124,28 @@
         };
     }
 
-    // Process synthesized text-to-speech with computer filter attributes
+    // Function to handle the robotic audio synthesis
     function speakRobotic(text) {
+        // Cancel any lingering spoken audio queue
         window.speechSynthesis.cancel();
-
-        if (!text) return;
 
         const utterance = new SpeechSynthesisUtterance(text);
         
+        // Try to pick a crisp English speaker profile
         const voices = window.speechSynthesis.getVoices();
         const googleVoice = voices.find(voice => voice.name.includes('Google US English') || voice.name.includes('Google UK English'));
         if (googleVoice) {
             utterance.voice = googleVoice;
         }
 
-        utterance.pitch = 0.5; // Robotic pitch modifier
-        utterance.rate = 1.1;  // Computerized talking speed multiplier
+        // Adjust parameters to synthesize a monotone, robotic system sound
+        utterance.pitch = 0.5; // Lower pitch for a more mechanical sound
+        utterance.rate = 1.1;  // Slightly faster pace to mimic computerized processing
 
         window.speechSynthesis.speak(utterance);
     }
 
+    // Chrome/Safari requirement to initialize the audio engine profile list
     if (window.speechSynthesis.onvoiceschanged !== undefined) {
         window.speechSynthesis.onvoiceschanged = window.speechSynthesis.getVoices;
     }
