@@ -31,7 +31,8 @@
 </div>
 
 <script>
-    const BASE_URL = 'https://primary-production-c553.up.railway.app/webhook-test/40775871-f74e-46da-80fb-8bd68bede083';
+    // Live production endpoint
+    const BASE_URL = 'https://railway.app';
 
     const micBtn = document.getElementById('micBtn');
     const statusDiv = document.getElementById('status');
@@ -53,6 +54,8 @@
 
         micBtn.addEventListener('click', () => {
             if (!isRecording) {
+                // Cancel any audio speech queue before recording begins
+                window.speechSynthesis.cancel();
                 recognition.start();
             } else {
                 recognition.stop();
@@ -89,22 +92,30 @@
                 if (response.ok) {
                     statusDiv.innerText = "Response received!";
                     const data = await response.text();
-                    
-                    // Fixed extraction sequence to guarantee it never shows 'undefined'
+                    let finalResult = "";
+
                     try {
                         const jsonData = JSON.parse(data);
                         
-                        // Handle multiple object layers or array items cleanly
-                        let parsedText = jsonData.output || jsonData.response || jsonData.text;
-                        if (!parsedText && Array.isArray(jsonData) && jsonData.length > 0) {
-                            parsedText = jsonData[0].output || jsonData[0].response || jsonData[0].text;
-                        }
+                        // Extract output from nested structure or flat keys safely
+                        finalResult = jsonData.output || jsonData.response || jsonData.text;
                         
-                        aiResponseDiv.innerText = parsedText || JSON.stringify(jsonData, null, 2);
+                        if (!finalResult && Array.isArray(jsonData) && jsonData.length > 0) {
+                            finalResult = jsonData[0].output || jsonData[0].response || jsonData[0].text;
+                        }
+
+                        if (!finalResult) {
+                            finalResult = JSON.stringify(jsonData);
+                        }
                     } catch {
-                        // Fallback straight to raw string text if it is not standard JSON formatting
-                        aiResponseDiv.innerText = data || "No message content returned.";
+                        finalResult = data;
                     }
+
+                    aiResponseDiv.innerText = finalResult || "No response received.";
+                    
+                    // Trigger the robotic speech playback audio engine
+                    speakRobotic(finalResult);
+
                 } else {
                     statusDiv.innerText = "Error sending to n8n.";
                     aiResponseDiv.innerText = "Failed to fetch response.";
@@ -122,6 +133,30 @@
             micBtn.innerText = "🎙️ Tap to Speak";
             micBtn.classList.remove('recording');
         };
+    }
+
+    // Process synthesized text-to-speech with computer filter attributes
+    function speakRobotic(text) {
+        window.speechSynthesis.cancel();
+
+        if (!text) return;
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        
+        const voices = window.speechSynthesis.getVoices();
+        const googleVoice = voices.find(voice => voice.name.includes('Google US English') || voice.name.includes('Google UK English'));
+        if (googleVoice) {
+            utterance.voice = googleVoice;
+        }
+
+        utterance.pitch = 0.5; // Robotic pitch modifier
+        utterance.rate = 1.1;  // Computerized talking speed multiplier
+
+        window.speechSynthesis.speak(utterance);
+    }
+
+    if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = window.speechSynthesis.getVoices;
     }
 </script>
 
