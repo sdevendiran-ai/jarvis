@@ -3,149 +3,192 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>School AI Voice Assistant</title>
+    <title>GCREVIVAL</title>
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: #f0f2f5; margin: 0; padding: 20px; box-sizing: border-box; }
-        .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; max-width: 450px; width: 100%; box-sizing: border-box; }
-        button { background: #007bff; color: white; border: none; padding: 15px 30px; font-size: 18px; border-radius: 50px; cursor: pointer; transition: background 0.2s; width: 100%; max-width: 250px; margin-bottom: 15px; }
-        button.recording { background: #dc3545; animation: pulse 1.5s infinite; }
-        #status { margin-top: 10px; color: #666; font-style: italic; font-size: 14px; }
-        .box-title { text-align: left; font-weight: bold; margin: 15px 0 5px 0; color: #555; font-size: 14px; }
-        .output-box { text-align: left; background: #eee; padding: 12px; border-radius: 8px; max-height: 120px; overflow-y: auto; font-size: 15px; color: #333; min-height: 40px; word-wrap: break-word; }
-        #aiResponse { background: #e6f3ff; color: #004085; border: 1px solid #b8daff; max-height: 200px; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        body {
+            background-color: black;
+            color: blueviolet;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        #title {
+            color: blueviolet;
+            text-shadow: 1px 4px 6px;
+        }
+
+        #img {
+            text-align: right;
+            display: block;
+            margin-left: auto;
+            margin-right: 0;
+        }
+
+        body {
+            background-image: url('https://t4.ftcdn.net/jpg/07/51/96/11/360_F_751961137_cO7i1u5j2qyGzlJp7tTEGKDrt8BHv5iF.jpg');
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+
+        #chatMessages {
+            color: blueviolet;
+            width: 90%;
+            max-width: 600px;
+            min-height: 250px;
+            max-height: 500px;
+            background-color: powderblue;   
+            border: 2px solid #333333;   
+            border-radius: 50px;
+            margin: 20px auto; 
+            padding: 25px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            text-align: left;
+            background-image: url('https://cdn.mos.cms.futurecdn.net/FRdq8ZbPetwNDRV9R3hYpP.jpg');
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-position: top;
+        }
+
+        #chez {
+            color: darkblue;
+            margin-top: 0;
+        }
+
+        #meslabel {
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        #chatMessages p {
+            background-color: rgba(255, 255, 255, 0.85);
+            padding: 10px 15px;
+            border-radius: 12px;
+            margin: 10px 0;
+            color: black;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 16px;
+            word-wrap: break-word;
+        }
     </style>
 </head>
+
 <body>
 
-<div class="card">
-    <h2>Voice Input for n8n</h2>
-    <button id="micBtn">🎙️ Tap to Speak</button>
-    <div id="status">Ready</div>
-    
-    <div class="box-title">You Said:</div>
-    <div id="userSpeech" class="output-box">Your speech will appear here...</div>
+    <img src="https://prestigeclient.vip/assets/img/logo.png"
+         style="width: 200px;" id="img">
 
-    <div class="box-title">JARVIS Response:</div>
-    <div id="aiResponse" class="output-box">Waiting for input...</div>
-</div>
+    <h1 id="title">JARVIS</h1>
+    <div id="titleshadow"></div>
+
+    <div id="chatMessages">
+        <h2 id="chez">Stream</h2>
+    </div>
 
 <script>
-    const BASE_URL = 'https://primary-production-c553.up.railway.app/webhook-test/40775871-f74e-46da-80fb-8bd68bede083';
+    const chatMessages = document.getElementById("chatMessages");
+    const BASE_URL = 'https://railway.app';
 
-    const micBtn = document.getElementById('micBtn');
-    const statusDiv = document.getElementById('status');
-    const userSpeechDiv = document.getElementById('userSpeech');
-    const aiResponseDiv = document.getElementById('aiResponse');
+    // Initialize Web Speech Recognition API Voice Engine
+    const SpeechEngine = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    
-    if (!SpeechRecognition) {
-        statusDiv.innerText = "Error: Your browser doesn't support voice recognition.";
-        micBtn.disabled = true;
-    } else {
-        const recognition = new SpeechRecognition();
+    if (SpeechEngine) {
+        recognition = new SpeechEngine();
         recognition.continuous = false;
         recognition.interimResults = false;
         recognition.lang = 'en-US';
 
-        let isRecording = false;
-
-        micBtn.addEventListener('click', () => {
-            if (!isRecording) {
-                // Stop any audio currently playing before listening again
-                window.speechSynthesis.cancel();
-                recognition.start();
-            } else {
-                recognition.stop();
-            }
-        });
-
         recognition.onstart = () => {
-            isRecording = true;
-            micBtn.innerText = "🛑 Stop Recording";
-            micBtn.classList.add('recording');
-            statusDiv.innerText = "Listening...";
+            console.log("JARVIS Voice Engine online.");
         };
 
         recognition.onend = () => {
-            isRecording = false;
-            micBtn.innerText = "🎙️ Tap to Speak";
-            micBtn.classList.remove('recording');
+            // Constant passive listener loop sequence for school environment
+            recognition.start();
         };
 
-        recognition.onresult = async (event) => {
-            const speechToText = event.results[0][0].transcript;
-            userSpeechDiv.innerText = speechToText;
-            statusDiv.innerText = "Sending to JARVIS...";
-            aiResponseDiv.innerText = "Thinking...";
-
-            try {
-                const targetUrl = `${BASE_URL}?chatInput=${encodeURIComponent(speechToText)}`;
-
-                const response = await fetch(targetUrl, {
-                    method: 'GET',
-                    headers: { 'Accept': 'application/json' }
-                });
-
-                if (response.ok) {
-                    statusDiv.innerText = "Response received!";
-                    const data = await response.text();
-                    let finalResult = "";
-
-                    try {
-                        const jsonData = JSON.parse(data);
-                        finalResult = jsonData.output || jsonData.response || jsonData.text || JSON.stringify(jsonData);
-                    } catch {
-                        finalResult = data;
-                    }
-
-                    aiResponseDiv.innerText = finalResult;
-                    
-                    // Trigger the robotic speech playback
-                    speakRobotic(finalResult);
-
-                } else {
-                    statusDiv.innerText = "Error sending to n8n.";
-                    aiResponseDiv.innerText = "Failed to fetch response.";
-                }
-            } catch (error) {
-                statusDiv.innerText = "Network error. Is n8n reachable?";
-                aiResponseDiv.innerText = "Could not connect to your server.";
-                console.error(error);
+        recognition.onresult = (event) => {
+            const voiceText = event.results[0][0].transcript;
+            if (voiceText.trim()) {
+                sendMessage(voiceText);
             }
         };
 
-        recognition.onerror = (event) => {
-            statusDiv.innerText = `Error occurred: ${event.error}`;
-            isRecording = false;
-            micBtn.innerText = "🎙️ Tap to Speak";
-            micBtn.classList.remove('recording');
-        };
+        window.addEventListener('load', () => {
+            recognition.start();
+        });
     }
 
-    // Function to handle the robotic audio synthesis
-    function speakRobotic(text) {
-        // Cancel any lingering spoken audio queue
-        window.speechSynthesis.cancel();
+    function displayMessage(sender, textContent) {
+        const newMessage = document.createElement("p");
+        newMessage.textContent = sender + ": " + textContent;
+        chatMessages.appendChild(newMessage);
+        chatMessages.scrollTop = chatMessages.scrollHeight; // Keeps display window forced to bottom focus
+    }
 
-        const utterance = new SpeechSynthesisUtterance(text);
+    async function sendMessage(messageText) {
+        displayMessage("Sir", messageText);
+
+        try {
+            // Append the query input straight to your production GET parameter path
+            const networkRoute = `${BASE_URL}?chatInput=${encodeURIComponent(messageText)}`;
+            
+            const request = await fetch(networkRoute, {
+                method: 'GET',
+                headers: { 'Accept': 'application/json' }
+            });
+
+            if (request.ok) {
+                const responseData = await request.text();
+                let cleanResponse = "";
+
+                try {
+                    const parsedJSON = JSON.parse(responseData);
+                    cleanResponse = parsedJSON.output || parsedJSON.response || parsedJSON.text;
+                    
+                    if (!cleanResponse && Array.isArray(parsedJSON) && parsedJSON.length > 0) {
+                        cleanResponse = parsedJSON.output || parsedJSON.response || parsedJSON.text;
+                    }
+                    if (!cleanResponse) {
+                        cleanResponse = JSON.stringify(parsedJSON);
+                    }
+                } catch {
+                    cleanResponse = responseData; // Direct text stream fallback handler
+                }
+
+                displayMessage("JARVIS", cleanResponse);
+                speakRobotic(cleanResponse);
+
+            } else {
+                displayMessage("SYSTEM ERROR", "Unable to transmit dataset package to n8n framework.");
+            }
+        } catch (error) {
+            displayMessage("SYSTEM ERROR", "Connection fetch path dropped or timed out.");
+            console.error(error);
+        }
+    }
+
+    function speakRobotic(text) {
+        if (!text) return;
+        window.speechSynthesis.cancel(); 
+
+        const voiceBox = new SpeechSynthesisUtterance(text);
+        const engineProfiles = window.speechSynthesis.getVoices();
+        const priorityVoice = engineProfiles.find(v => v.name.includes('Google US English') || v.name.includes('Google UK English'));
         
-        // Try to pick a crisp English speaker profile
-        const voices = window.speechSynthesis.getVoices();
-        const googleVoice = voices.find(voice => voice.name.includes('Google US English') || voice.name.includes('Google UK English'));
-        if (googleVoice) {
-            utterance.voice = googleVoice;
+        if (priorityVoice) {
+            voiceBox.voice = priorityVoice;
         }
 
-        // Adjust parameters to synthesize a monotone, robotic system sound
-        utterance.pitch = 0.5; // Lower pitch for a more mechanical sound
-        utterance.rate = 1.1;  // Slightly faster pace to mimic computerized processing
+        voiceBox.pitch = 0.5; // Robotic monotone modulation parameter scaling
+        voiceBox.rate = 1.1;  
 
-        window.speechSynthesis.speak(utterance);
+        window.speechSynthesis.speak(voiceBox);
     }
 
-    // Chrome/Safari requirement to initialize the audio engine profile list
     if (window.speechSynthesis.onvoiceschanged !== undefined) {
         window.speechSynthesis.onvoiceschanged = window.speechSynthesis.getVoices;
     }
