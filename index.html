@@ -5,12 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GCREVIVAL</title>
     <style>
+        /* Unified Body Styles to resolve CSS override conflicts */
         body {
             background-color: black;
             color: blueviolet;
             text-align: center;
             margin: 0;
             padding: 20px;
+            background-image: url('https://t4.ftcdn.net/jpg/07/51/96/11/360_F_751961137_cO7i1u5j2qyGzlJp7tTEGKDrt8BHv5iF.jpg');
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
         }
 
         #title {
@@ -19,18 +25,26 @@
         }
 
         #img {
-            text-align: right;
             display: block;
-            margin-left: auto;
-            margin-right: 0;
+            margin: 0 auto; /* Centered your crown logo profile asset */
         }
 
-        body {
-            background-image: url('https://t4.ftcdn.net/jpg/07/51/96/11/360_F_751961137_cO7i1u5j2qyGzlJp7tTEGKDrt8BHv5iF.jpg');
-            background-repeat: no-repeat;
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
+        #recordButton {
+            background-color: blueviolet;
+            color: white;
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border: 2px solid #333333;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 15px auto;
+            display: inline-block;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        #recordButton:active {
+            transform: scale(0.95);
         }
 
         #chatMessages {
@@ -83,17 +97,23 @@
     <h1 id="title">JARVIS</h1>
     <div id="titleshadow"></div>
 
+    <!-- Restored target record button element to anchor script event listeners -->
+    <button id="recordButton">🎙️ Tap to Speak</button>
+
     <div id="chatMessages">
         <h2 id="chez">Stream</h2>
     </div>
 
 <script>
     const chatMessages = document.getElementById("chatMessages");
+    const recordButton = document.getElementById("recordButton");
+
+    // ⚠️ REPLACE THIS LINK WITH YOUR ACTIVE N8N PRODUCTION WEBHOOK PATH
     const BASE_URL = 'https://railway.app';
 
-    // Initialize Web Speech Recognition API Voice Engine
     const SpeechEngine = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition = null;
+    let isRecording = false;
 
     if (SpeechEngine) {
         recognition = new SpeechEngine();
@@ -102,12 +122,15 @@
         recognition.lang = 'en-US';
 
         recognition.onstart = () => {
-            console.log("JARVIS Voice Engine online.");
+            isRecording = true;
+            recordButton.innerText = "🛑 Stop Recording";
+            recordButton.style.backgroundColor = "#dc3545";
         };
 
         recognition.onend = () => {
-            // Constant passive listener loop sequence for school environment
-            recognition.start();
+            isRecording = false;
+            recordButton.innerText = "🎙️ Tap to Speak";
+            recordButton.style.backgroundColor = "blueviolet";
         };
 
         recognition.onresult = (event) => {
@@ -117,23 +140,30 @@
             }
         };
 
-        window.addEventListener('load', () => {
-            recognition.start();
+        recordButton.addEventListener('click', () => {
+            if (!isRecording) {
+                window.speechSynthesis.cancel(); 
+                recognition.start();
+            } else {
+                recognition.stop();
+            }
         });
+    } else {
+        recordButton.innerText = "Speech Not Supported";
+        recordButton.disabled = true;
     }
 
     function displayMessage(sender, textContent) {
         const newMessage = document.createElement("p");
         newMessage.textContent = sender + ": " + textContent;
         chatMessages.appendChild(newMessage);
-        chatMessages.scrollTop = chatMessages.scrollHeight; // Keeps display window forced to bottom focus
+        chatMessages.scrollTop = chatMessages.scrollHeight; 
     }
 
     async function sendMessage(messageText) {
         displayMessage("Sir", messageText);
 
         try {
-            // Append the query input straight to your production GET parameter path
             const networkRoute = `${BASE_URL}?chatInput=${encodeURIComponent(messageText)}`;
             
             const request = await fetch(networkRoute, {
@@ -150,13 +180,13 @@
                     cleanResponse = parsedJSON.output || parsedJSON.response || parsedJSON.text;
                     
                     if (!cleanResponse && Array.isArray(parsedJSON) && parsedJSON.length > 0) {
-                        cleanResponse = parsedJSON.output || parsedJSON.response || parsedJSON.text;
+                        cleanResponse = parsedJSON[0].output || parsedJSON[0].response || parsedJSON[0].text || JSON.stringify(parsedJSON[0]);
                     }
                     if (!cleanResponse) {
                         cleanResponse = JSON.stringify(parsedJSON);
                     }
                 } catch {
-                    cleanResponse = responseData; // Direct text stream fallback handler
+                    cleanResponse = responseData; 
                 }
 
                 displayMessage("JARVIS", cleanResponse);
@@ -183,7 +213,7 @@
             voiceBox.voice = priorityVoice;
         }
 
-        voiceBox.pitch = 0.5; // Robotic monotone modulation parameter scaling
+        voiceBox.pitch = 0.5; 
         voiceBox.rate = 1.1;  
 
         window.speechSynthesis.speak(voiceBox);
